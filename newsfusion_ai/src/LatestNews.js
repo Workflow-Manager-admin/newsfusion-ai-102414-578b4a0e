@@ -18,6 +18,19 @@ import "./App.css";
 const NEWS_API_KEY = "752d30fff1124135a2ecb248c652fe37"; // demo
 const API_URL = "https://newsapi.org/v2/top-headlines";
 const COUNTRY = "us";
+
+// Mapping from UI label/value to NewsAPI-supported category
+const CATEGORY_MAP = {
+  all: "",
+  technology: "technology",
+  // Map 'Politics' (UI value 'politics') to NewsAPI 'general'
+  politics: "general",
+  health: "health",
+  sports: "sports",
+  entertainment: "entertainment"
+};
+
+// UI categories for display—some map to supported categories underneath
 const CATEGORIES = [
   { label: "All", value: "all" },
   { label: "Technology", value: "technology" },
@@ -25,6 +38,11 @@ const CATEGORIES = [
   { label: "Health", value: "health" },
   { label: "Sports", value: "sports" },
   { label: "Entertainment", value: "entertainment" }
+];
+
+// For error diagnostics
+const NEWSAPI_SUPPORTED_CATEGORIES = [
+  "business", "entertainment", "general", "health", "science", "sports", "technology"
 ];
 
 // PUBLIC_INTERFACE
