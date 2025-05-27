@@ -11,7 +11,7 @@ import "./App.css";
  *
  * UI:
  * - Card-based grid layout in dark-theme
- * - Last-updated indicator (polls every 90 sec)
+ * - Last-updated indicator (no auto-refresh)
  * - User-friendly error states
  * - Responsive mobile/desktop
  */
@@ -56,8 +56,6 @@ function LatestNews({
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-
-  const pollingRef = useRef(null);
 
   // PUBLIC_INTERFACE
   // fetch news from NewsAPI, given category
@@ -154,17 +152,10 @@ function LatestNews({
     if (showLoading) setLoading(false);
   };
 
-  // Set up polling every 90 seconds, handle unmount/cleanup
+  // Fetch news only on mount and category change—no polling/interval
   useEffect(() => {
     fetchHeadlines(category);
-    if (pollingRef.current) clearInterval(pollingRef.current);
-    pollingRef.current = setInterval(() => {
-      fetchHeadlines(category, false);
-    }, 90000);
-
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
+    // No setInterval, so nothing to clean up.
     // eslint-disable-next-line
   }, [category]);
 

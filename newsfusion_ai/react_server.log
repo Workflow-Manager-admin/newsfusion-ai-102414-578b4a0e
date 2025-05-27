@@ -21,3 +21,31 @@ webpack compiled successfully
 Compiling...
 Compiled successfully!
 webpack compiled successfully
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/LatestNews.js
+  Line 158:9:   'pollingRef' is not defined  no-undef
+  Line 158:43:  'pollingRef' is not defined  no-undef
+  Line 159:5:   'pollingRef' is not defined  no-undef
+  Line 164:11:  'pollingRef' is not defined  no-undef
+  Line 164:45:  'pollingRef' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in [eslint] 
+src/LatestNews.js
+  Line 1:38:  'useRef' is defined but never used  no-unused-vars
+
+ERROR in [eslint] 
+src/LatestNews.js
+  Line 158:9:   'pollingRef' is not defined  no-undef
+  Line 158:43:  'pollingRef' is not defined  no-undef
+  Line 159:5:   'pollingRef' is not defined  no-undef
+  Line 164:11:  'pollingRef' is not defined  no-undef
+  Line 164:45:  'pollingRef' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
+Compiling...
