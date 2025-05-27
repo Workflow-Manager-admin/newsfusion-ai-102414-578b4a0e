@@ -15,11 +15,14 @@ const API_URL = "https://newsapi.org/v2/top-headlines";
 const COUNTRY = "us";
 
 // PUBLIC_INTERFACE
+import ArticleDetailView from "./ArticleDetailView";
+
 function HomePage({ theme, setTheme }) {
   const [category, setCategory] = useState(CATEGORIES[0].value);
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
+  const [selectedArticle, setSelectedArticle] = useState(null);
 
   // PUBLIC_INTERFACE
   const fetchArticles = useCallback(async (selectedCategory) => {
@@ -36,7 +39,7 @@ function HomePage({ theme, setTheme }) {
       const data = await res.json();
       if (data.status !== "ok") throw new Error(data.message || "API error");
       let sorted = data.articles
-        .filter(a => a.title && a.publishedAt)
+        .filter((a) => a.title && a.publishedAt)
         .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
       setArticles(sorted);
     } catch (e) {
@@ -54,30 +57,52 @@ function HomePage({ theme, setTheme }) {
     setCategory(val);
   }
 
+  // PUBLIC_INTERFACE
+  function handleNewsCardClick(article) {
+    setSelectedArticle(article);
+  }
+
+  // PUBLIC_INTERFACE
+  function handleCloseDetail() {
+    setSelectedArticle(null);
+  }
+
   return (
     <div className={`homepage ${theme}`}>
       <div className="filters-row">
         <CategoryFilters selected={category} onChange={handleCategoryChange} />
         <ThemeToggle theme={theme} setTheme={setTheme} />
       </div>
-      {loading && (
-        <div className="loaderwrap">
-          <Spinner />
-        </div>
-      )}
-      {err && (
-        <div className="errmsg">⚠️ {err}</div>
-      )}
-      {!loading && !err && (
-        <div className="news-grid">
-          {articles.length === 0 ? (
-            <div className="noresults">No news articles found.</div>
-          ) : (
-            articles.map((article, i) => (
-              <NewsCard {...article} key={article.url || i} />
-            ))
+      {selectedArticle ? (
+        <ArticleDetailView
+          article={selectedArticle}
+          onClose={handleCloseDetail}
+          theme={theme}
+        />
+      ) : (
+        <>
+          {loading && (
+            <div className="loaderwrap">
+              <Spinner />
+            </div>
           )}
-        </div>
+          {err && <div className="errmsg">⚠️ {err}</div>}
+          {!loading && !err && (
+            <div className="news-grid">
+              {articles.length === 0 ? (
+                <div className="noresults">No news articles found.</div>
+              ) : (
+                articles.map((article, i) => (
+                  <NewsCard
+                    {...article}
+                    key={article.url || i}
+                    onClick={() => handleNewsCardClick(article)}
+                  />
+                ))
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
