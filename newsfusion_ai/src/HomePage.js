@@ -22,33 +22,54 @@ function HomePage({ theme, setTheme }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  // We keep a ref to the interval so it can be cleared on unmount/category change
+  const intervalRef = useRef();
 
   // PUBLIC_INTERFACE
-  const fetchArticles = useCallback(async (selectedCategory) => {
-    setLoading(true);
-    setErr(null);
-    setArticles([]);
-    let url = `${API_URL}?country=${COUNTRY}&apiKey=${NEWS_API_KEY}`;
-    if (selectedCategory && selectedCategory !== "all") {
-      url += `&category=${selectedCategory}`;
-    }
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch news data.");
-      const data = await res.json();
-      if (data.status !== "ok") throw new Error(data.message || "API error");
-      let sorted = data.articles
-        .filter((a) => a.title && a.publishedAt)
-        .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
-      setArticles(sorted);
-    } catch (e) {
-      setErr(e.message);
-    }
-    setLoading(false);
-  }, []);
+  const fetchArticles = useCallback(
+    async (selectedCategory, showLoading=true) => {
+      if (showLoading) setLoading(true);
+      setErr(null);
+      setArticles([]);
+      let url = `${API_URL}?country=${COUNTRY}&apiKey=${NEWS_API_KEY}`;
+      if (selectedCategory && selectedCategory !== "all") {
+        url += `&category=${selectedCategory}`;
+      }
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Failed to fetch news data.");
+        const data = await res.json();
+        if (data.status !== "ok") throw new Error(data.message || "API error");
+        let sorted = data.articles
+          .filter((a) => a.title && a.publishedAt)
+          .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+        setArticles(sorted);
+        setLastUpdated(new Date());
+      } catch (e) {
+        setErr(e.message);
+      }
+      if (showLoading) setLoading(false);
+    }, []
+  );
 
+  // On category change: fetch immediately, then set up interval polling
   useEffect(() => {
     fetchArticles(category);
+
+    // Clear any existing interval
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    // Set up interval for refreshing every 90 seconds
+    intervalRef.current = setInterval(() => {
+      fetchArticles(category, false);
+    }, 90000);
+
+    // Clean up on category change or unmount
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [category, fetchArticles]);
 
   // PUBLIC_INTERFACE
@@ -71,6 +92,16 @@ function HomePage({ theme, setTheme }) {
       <div className="filters-row">
         <CategoryFilters selected={category} onChange={handleCategoryChange} />
         <ThemeToggle theme={theme} setTheme={setTheme} />
+      </div>
+      <div style={{marginBottom: 12, fontSize: "1.01rem", color: "var(--text-secondary)", minHeight: 26}}>
+        {lastUpdated && (
+          <span>
+            Last updated:{" "}
+            <span style={{color: "var(--kavia-orange)", fontWeight: 500}}>
+              {lastUpdated.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second: '2-digit'})}
+            </span>
+          </span>
+        )}
       </div>
       {selectedArticle ? (
         <ArticleDetailView
