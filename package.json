@@ -1,0 +1,19 @@
+{
+  "name": "newsfusion-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NewsFusion AI - modern React-based news aggregator with AI-powered summarization.",
+  "scripts": {
+    "start": "npm --prefix newsfusion_ai start",
+    "build": "npm --prefix newsfusion_ai run build",
+    "test": "npm --prefix newsfusion_ai test"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "keywords": [
+    "react",
+    "news",
+    "ai",
+    "summarization"
+  ]
+}
