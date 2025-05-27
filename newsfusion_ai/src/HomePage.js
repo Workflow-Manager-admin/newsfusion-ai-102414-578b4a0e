@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import "./App.css";
+import ArticleDetailView from "./ArticleDetailView";
 
 // PUBLIC_INTERFACE
 export const CATEGORIES = [
