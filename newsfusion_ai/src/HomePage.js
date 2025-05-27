@@ -150,21 +150,50 @@ function Spinner() {
 }
 
 // PUBLIC_INTERFACE
-function NewsCard({ title, description, url, urlToImage, source, publishedAt }) {
+function NewsCard({
+  title,
+  description,
+  url,
+  urlToImage,
+  source,
+  publishedAt,
+  onClick,
+}) {
   const prettyTime = publishedAt ? new Date(publishedAt).toLocaleString() : "";
   return (
-    <div className="news-card">
-      {urlToImage && <div className="card-imgwrap"><img src={urlToImage} alt="" className="card-img" /></div>}
+    <div
+      className="news-card"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={e => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
+          onClick();
+        }
+      }}
+      style={{ cursor: onClick ? "pointer" : undefined }}
+      aria-label={title}
+      role={onClick ? "button" : undefined}
+    >
+      {urlToImage && (
+        <div className="card-imgwrap">
+          <img src={urlToImage} alt="" className="card-img" />
+        </div>
+      )}
       <div className="card-body">
         <div className="card-header">
-          <h3 className="card-title"><a href={url} target="_blank" rel="noopener noreferrer">{title}</a></h3>
+          <h3 className="card-title">
+            {/* Use anchor only in Detail, here for visual click */}
+            {title}
+          </h3>
         </div>
         <div className="card-meta">
           <span className="card-source">{source?.name || "Unknown"}</span>
           <span className="card-dot">·</span>
           <span className="card-time">{prettyTime}</span>
         </div>
-        <p className="card-desc">{description || <span className="card-no-desc">No description</span>}</p>
+        <p className="card-desc">
+          {description || <span className="card-no-desc">No description</span>}
+        </p>
       </div>
     </div>
   );
