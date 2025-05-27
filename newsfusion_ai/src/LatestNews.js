@@ -91,16 +91,64 @@ function LatestNews({
     }
     try {
       const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch news data.");
-      const data = await res.json();
-      if (data.status !== "ok") throw new Error(data.message || "API error");
+      let responseText;
+      let data;
+      if (!res.ok) {
+        // Try to extract error details from NewsAPI or network
+        try {
+          responseText = await res.text();
+          data = JSON.parse(responseText);
+        } catch {
+          data = null;
+        }
+        let errorMsg = "Failed to fetch news data!";
+        // Show NewsAPI errors if available
+        if (data && data.message) {
+          errorMsg += ` API response: ${data.message}`;
+        } else if (res.status === 401) {
+          errorMsg += " The API key is missing or invalid (HTTP 401 Unauthorized).";
+        } else if (res.status === 426 || res.status === 403 || res.status === 429) {
+          errorMsg += " You may have reached your API quota or your API key is restricted.";
+        } else if (res.status === 400) {
+          errorMsg += " Bad request (HTTP 400)—invalid parameters supplied to API.";
+        }
+        errorMsg += ` (HTTP status: ${res.status})`;
+        setErr(errorMsg);
+        setArticles([]);
+        if (showLoading) setLoading(false);
+        return;
+      }
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        setErr("The server response was not valid JSON. This may indicate a problem with CORS or endpoint configuration.");
+        setArticles([]);
+        if (showLoading) setLoading(false);
+        return;
+      }
+      if (data.status !== "ok") {
+        let apiMsg = data.message ? ` NewsAPI: ${data.message}` : "";
+        setErr("News fetching failed." + apiMsg);
+        setArticles([]);
+        if (showLoading) setLoading(false);
+        return;
+      }
       let sorted = data.articles
         .filter(a => a.title && a.publishedAt)
         .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
       setArticles(sorted);
       setLastUpdated(new Date());
     } catch (e) {
-      setErr(e.message || "An error occurred loading news.");
+      let errMsg = e && e.message ? e.message : "An error occurred loading news.";
+      // Browser CORS/network failures
+      if (
+        /Failed to fetch/i.test(errMsg) ||
+        /NetworkError/i.test(errMsg) ||
+        /TypeError: Failed to fetch/.test(errMsg)
+      ) {
+        errMsg += " (Network error: This may be due to a CORS policy restriction, internet failure, or browser/network blocking cross-origin requests. Check your console Network tab for more info.)";
+      }
+      setErr(errMsg);
       setArticles([]);
     }
     if (showLoading) setLoading(false);
