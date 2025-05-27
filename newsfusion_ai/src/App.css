@@ -358,6 +358,16 @@ body.light .errmsg, .app.light .errmsg {
   border: 1px solid #ebbcbc;
 }
 
+/* CustomSummarizer textarea */
+.customsum-textarea {
+  font-family: inherit;
+  transition: border 0.18s;
+}
+.customsum-textarea:focus {
+  border: 1.5px solid var(--kavia-orange);
+  transition: border 0.13s;
+}
+
 .noresults {
   font-size: 1.13rem;
   text-align: center;
