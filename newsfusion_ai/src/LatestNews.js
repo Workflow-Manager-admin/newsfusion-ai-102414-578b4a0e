@@ -64,9 +64,30 @@ function LatestNews({
   const fetchHeadlines = async (selCategory, showLoading = true) => {
     if (showLoading) setLoading(true);
     setErr(null);
+
+    // Map the selected category value to NewsAPI-supported value
+    // If not supported, report a user-facing error
+    const mappedCat = CATEGORY_MAP[selCategory] !== undefined ? CATEGORY_MAP[selCategory] : undefined;
+
+    if (mappedCat === undefined) {
+      setErr(`Selected category "${selCategory}" is not supported. Please choose a different category.`);
+      setArticles([]);
+      if (showLoading) setLoading(false);
+      return;
+    }
+
+    // If a mapped category is present and not the empty string, ensure it's in NewsAPI's supported list. ('general' is for 'Politics')
+    if (mappedCat && !NEWSAPI_SUPPORTED_CATEGORIES.includes(mappedCat)) {
+      setErr(`Internal error: Category "${mappedCat}" is not a NewsAPI-supported category.`);
+      setArticles([]);
+      if (showLoading) setLoading(false);
+      return;
+    }
+
     let url = `${API_URL}?country=${COUNTRY}&apiKey=${NEWS_API_KEY}`;
-    if (selCategory && selCategory !== "all") {
-      url += `&category=${selCategory}`;
+    // Only include category if mappedCat is not empty ('All' maps to "")
+    if (mappedCat) {
+      url += `&category=${mappedCat}`;
     }
     try {
       const res = await fetch(url);
@@ -101,6 +122,7 @@ function LatestNews({
 
   // PUBLIC_INTERFACE
   function handleCategoryChange(val) {
+    // val is the UI-selected value ('politics', etc.) which may be remapped internally
     setCategory(val);
   }
 
