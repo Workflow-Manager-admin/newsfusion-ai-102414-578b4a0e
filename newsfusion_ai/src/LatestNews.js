@@ -56,6 +56,8 @@ function LatestNews({
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
+  // Used to prevent auto-fetch after initial mount/category change
+  const isFirstMount = useRef(true);
 
   // PUBLIC_INTERFACE
   // fetch news from NewsAPI, given category
@@ -152,10 +154,17 @@ function LatestNews({
     if (showLoading) setLoading(false);
   };
 
-  // Fetch news only on mount and category change—no polling/interval
+  // Fetch news on mount and on category change (but only triggered by user action, i.e., category change)
   useEffect(() => {
-    fetchHeadlines(category);
-    // No setInterval, so nothing to clean up.
+    // fetchHeadlines only on category change (not on mount), unless initial mount
+    if (isFirstMount.current) {
+      // On initial mount, fetch news for the default/prop-supplied category
+      fetchHeadlines(category);
+      isFirstMount.current = false;
+    } else {
+      // On user-triggered category change, refetch news
+      fetchHeadlines(category);
+    }
     // eslint-disable-next-line
   }, [category]);
 
@@ -163,6 +172,11 @@ function LatestNews({
   function handleCategoryChange(val) {
     // val is the UI-selected value ('politics', etc.) which may be remapped internally
     setCategory(val);
+  }
+
+  // PUBLIC_INTERFACE
+  function handleRefresh() {
+    fetchHeadlines(category);
   }
 
   // UI render
@@ -185,6 +199,27 @@ function LatestNews({
             </button>
           ))}
         </div>
+        <button
+          className="btn"
+          style={{
+            marginLeft: 18,
+            background: accent,
+            color: "#fff",
+            fontWeight: 600,
+            fontSize: "1.04rem",
+            border: "none",
+            borderRadius: 6,
+            padding: "7px 22px",
+            cursor: loading ? "wait" : "pointer",
+            opacity: loading ? 0.75 : 1,
+            transition: "opacity 0.18s"
+          }}
+          onClick={handleRefresh}
+          disabled={loading}
+          aria-busy={loading}
+        >
+          {loading ? "Refreshing..." : "Refresh"}
+        </button>
         <span
           style={{
             marginLeft: 18,
