@@ -1,0 +1,205 @@
+import React, { useState, useEffect, useRef } from "react";
+import "./App.css";
+
+// PUBLIC_INTERFACE
+/**
+ * LatestNews: Fetches and displays the latest news headlines from NewsAPI.org.
+ * - Props:
+ *    - category: string (news category, default: "all")
+ *    - theme: "dark"|"light" (default: "dark")
+ *    - accent: string (accent color, default: "#f56565")
+ *
+ * UI:
+ * - Card-based grid layout in dark-theme
+ * - Last-updated indicator (polls every 90 sec)
+ * - User-friendly error states
+ * - Responsive mobile/desktop
+ */
+const NEWS_API_KEY = "752d30fff1124135a2ecb248c652fe37"; // demo
+const API_URL = "https://newsapi.org/v2/top-headlines";
+const COUNTRY = "us";
+const CATEGORIES = [
+  { label: "All", value: "all" },
+  { label: "Technology", value: "technology" },
+  { label: "Politics", value: "politics" },
+  { label: "Health", value: "health" },
+  { label: "Sports", value: "sports" },
+  { label: "Entertainment", value: "entertainment" }
+];
+
+// PUBLIC_INTERFACE
+function LatestNews({
+  category: initialCategory = "all",
+  theme = "dark",
+  accent = "#f56565"
+}) {
+  const [category, setCategory] = useState(initialCategory);
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  const pollingRef = useRef(null);
+
+  // PUBLIC_INTERFACE
+  // fetch news from NewsAPI, given category
+  const fetchHeadlines = async (selCategory, showLoading = true) => {
+    if (showLoading) setLoading(true);
+    setErr(null);
+    let url = `${API_URL}?country=${COUNTRY}&apiKey=${NEWS_API_KEY}`;
+    if (selCategory && selCategory !== "all") {
+      url += `&category=${selCategory}`;
+    }
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch news data.");
+      const data = await res.json();
+      if (data.status !== "ok") throw new Error(data.message || "API error");
+      let sorted = data.articles
+        .filter(a => a.title && a.publishedAt)
+        .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+      setArticles(sorted);
+      setLastUpdated(new Date());
+    } catch (e) {
+      setErr(e.message || "An error occurred loading news.");
+      setArticles([]);
+    }
+    if (showLoading) setLoading(false);
+  };
+
+  // Set up polling every 90 seconds, handle unmount/cleanup
+  useEffect(() => {
+    fetchHeadlines(category);
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    pollingRef.current = setInterval(() => {
+      fetchHeadlines(category, false);
+    }, 90000);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+    // eslint-disable-next-line
+  }, [category]);
+
+  // PUBLIC_INTERFACE
+  function handleCategoryChange(val) {
+    setCategory(val);
+  }
+
+  // UI render
+  return (
+    <div className={`latest-news${theme === "light" ? " light" : ""}`}>
+      <div className="filters-row">
+        <div className="filters">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.value}
+              className={`category-btn${category === cat.value ? " active" : ""}`}
+              onClick={() => handleCategoryChange(cat.value)}
+              style={
+                category === cat.value
+                  ? { background: accent }
+                  : undefined
+              }
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+        <span
+          style={{
+            marginLeft: 18,
+            color: "var(--text-secondary)",
+            fontSize: "1.04rem"
+          }}
+        >
+          <span
+            style={{
+              color: accent,
+              fontWeight: 500
+            }}
+          >
+            {lastUpdated
+              ? `Last updated: ${lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
+              : ""}
+          </span>
+        </span>
+      </div>
+      {loading && (
+        <div className="loaderwrap">
+          <NewsSpinner accent={accent} />
+        </div>
+      )}
+      {err && <div className="errmsg">⚠️ {err}</div>}
+      {!loading && !err && (
+        <div className="news-grid">
+          {articles.length === 0 ? (
+            <div className="noresults" style={{ color: accent }}>
+              No news articles found.
+            </div>
+          ) : (
+            articles.map((article, i) => (
+              <NewsCard key={article.url || i} article={article} accent={accent} />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// PUBLIC_INTERFACE
+function NewsCard({ article, accent }) {
+  const { title, description, url, urlToImage, source, publishedAt } = article;
+  const prettyTime = publishedAt ? new Date(publishedAt).toLocaleString() : "";
+  return (
+    <div className="news-card" tabIndex={0} style={{ borderColor: accent, boxShadow: "0 3px 12px var(--card-shadow)" }}>
+      {urlToImage && (
+        <div className="card-imgwrap">
+          <img src={urlToImage} alt="" className="card-img" />
+        </div>
+      )}
+      <div className="card-body">
+        <div className="card-header">
+          <h3 className="card-title">
+            {url ? (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: accent, borderBottom: `2px solid ${accent}` }}
+              >
+                {title}
+              </a>
+            ) : (
+              title
+            )}
+          </h3>
+        </div>
+        <div className="card-meta">
+          <span className="card-source" style={{ color: accent }}>
+            {source?.name || "Unknown"}
+          </span>
+          <span className="card-dot">·</span>
+          <span className="card-time">{prettyTime}</span>
+        </div>
+        <p className="card-desc">
+          {description || <span className="card-no-desc">No description</span>}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// PUBLIC_INTERFACE
+function NewsSpinner({ accent }) {
+  return (
+    <div className="spinner" aria-label="Loading">
+      <div className="bounce1" style={{ backgroundColor: accent }} />
+      <div className="bounce2" style={{ backgroundColor: accent }} />
+      <div className="bounce3" style={{ backgroundColor: accent }} />
+    </div>
+  );
+}
+
+export default LatestNews;
