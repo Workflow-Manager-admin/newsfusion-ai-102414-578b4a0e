@@ -16,8 +16,6 @@ const API_URL = "https://newsapi.org/v2/top-headlines";
 const COUNTRY = "us";
 
 // PUBLIC_INTERFACE
-import ArticleDetailView from "./ArticleDetailView";
-
 function HomePage({ theme, setTheme }) {
   const [category, setCategory] = useState(CATEGORIES[0].value);
   const [articles, setArticles] = useState([]);
